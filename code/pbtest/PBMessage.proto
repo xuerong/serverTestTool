@@ -1,0 +1,1976 @@
+option java_package = "com.protocol";
+
+//客户端登录消息包
+//CSLogin必须是第一个message并且id是20002,ServerEngine强制规定无法修改!!!
+//注意：发送和接收的Message必须对应，有一个CS就必须有一个SC，中间不能有其它message，顺序不能错
+
+//@v1.0.0----------------------注册登录开始----------------------
+//第一步用Mid登录LoginServer，返回GameServer的url和accountId
+//每二步用accountId登录GameServer，游戏开始
+message CSLogin
+{
+	required int32 loginType		= 1;	//登录login server = 0;登录game server = 1;
+	required string mid 			= 2;	//设置的唯一地址，取MAC地址，如果没有，客户端生成一个
+	required string version 		= 3;	//版本号的验证最好在登录GameServer时做
+	required int32 channelId		= 4;	//载渠道:渠道号定义在下面
+	optional int64 accountId 		= 5;	//登录LoginServer时返回AccountId,再用AcccountId登录GameServer
+	optional string username 		= 14;	//两次base64加密后的值
+	optional string password 		= 15;	//两次base64加密后的值
+	optional PBLoginInfo loginInfo	= 16;	//登录信息统计
+}
+
+message SCLoginRet
+{
+	required int32 loginType		= 1;	//登录login server = 0;登录game server = 1;
+	optional string serverUrl		= 2;	//登录LoginServer时返回，GameServer的地址
+	optional int32 state 			= 3;	//登录GameServer时返回：1.新玩家 2.老玩家 登陆LoginServer时返回服务器状态: 1:正常 2:服务器维护
+	optional int64 accountId		= 4;	//登录LoginServer时返回,再用AcccountId登录GameServer
+}
+
+message CSAskUserData
+{
+	
+}
+
+message SCAskUserData
+{
+	required PBPlayerInfo player_Info 			= 2;	//玩家基本信息
+	required PBWorldTreeInfo worldTree_Info 	= 3;	//世界树基本信息
+	repeated PBPlantInfo plant_Info 			= 4;	//植物列表
+	repeated PBIslandInfo island_Info			= 6;	//开岛
+	repeated PBDecorationInfo decoration_Info 	= 7;	//装饰物
+	repeated PBGarbageInfo garbage_Info 		= 8;	//垃圾，只发已清除的垃圾ID
+	repeated int32 expand_Info 					= 9;	//地块，只发已开的地块ID
+	repeated PBBuildingInfo building_Info		= 10;	//如果建筑是固定的那几个一直在地图上，可以不用发
+	
+	repeated int32 mission_Complete 			= 11;
+	repeated PBAcceptMission mission_Accept 	= 12;
+	
+	optional PBPlayerInfoEx playerInfoEx		= 13;	//玩家的其它数据
+	optional int32 mailCount					= 14;	//邮件总量
+	optional int32 hasNewMarket					= 15;	//是否有新的交易，1 = 有，0或不存在 = 无
+
+	required PBAvactarData aVatar 				= 16;
+	required int32 enterIslandId 				= 17;
+    required int32 openHotelCount               = 18; //打开的hotel房间总数
+    repeated PBHotelPlant HotelPlant            = 19; //keyvalueList
+	
+    required int32 newPlayerGuideId             = 20;  
+	required int32 dailyRewardLastTime			= 21;	//每日奖励最后一次领取时间,无信息为-1
+	required int32 TableId						= 22;	//上次领奖的TabId
+    required int32 surplusCollectMagicTimes     = 23;  	//剩余收集次数
+    required int32 oneDayCollectMagicTimes      = 24;  	//收集次数
+	required int32 hasFinishPinTu				= 25;	//是否完成当前活动周期内的拼图活动 - 完成=1; 未完成=0;
+	required int32 hasStorageItem               = 26;	//仓库是否有道具，1=有，0或者不存在 =无
+	required int32 fanPaiCount					= 27;	//翻牌活动次数
+
+	repeated PBGrabbedPlantInfo grabbedPlantInfor	= 28;	//	已抢位的植物信息;
+	
+	repeated PBMaterial material_Info           = 29;   //材料列表
+	
+	required int32 mSeed						= 30;	//随机大数
+	required int32 mB							= 31;	//随机正数
+
+    required int32 friendCount					= 32;	//好友总数
+	required int32 PacketIndex					= 33;	//网络包索引
+	//状态位参数 个位:Storage(0-无 1:有) 十位：Market（0-无：1-有）百位:pintu(0-无：1-有)千位：Hotel(0-无：1-有)
+	required int32 statusFlag					= 34;
+	
+	required int32 curCityId                   = 35;
+	
+	repeated PBTuiTuProps tuiTuProps            = 36;	//推图道具
+}
+
+//错误信息，这个message的opcode不能变，这要在这个message前面插入其它message
+message SCErrorMsg
+{
+	required int32 errorType 	= 1;	// ErrorType;
+	required int32 opcode 		= 2;	//发包的opcode
+	optional string strParam	= 3;	//字符参数，如：当是Version Error, strParam 就是版本号
+	optional int32 intParam		= 4;	//数值参数，
+}
+
+//第一次进入，玩家设置名称
+message CSCreatePlayer
+{
+	required string playerName 	= 1;	//玩家名称
+	repeated int32 initClothes 	= 2;	
+}
+message SCCreatePlayerRet
+{
+
+}
+
+//心跳包
+message CSHeartbeat
+{
+
+}
+
+message SCHeartbeatRet
+{
+	required int32 isThereAre = 	1;	//是否存在有邮件未读(0:没有可读右键 1:有可读邮件)
+}
+
+//前端登出，保留此消息
+message CSLogout
+{
+}
+
+message SCLogoutRet
+{
+}
+
+//登录信息统计
+message PBLoginInfo
+{
+	optional string area	 	= 4;//	登录地区名称
+	optional string country		= 5;//	登录国家名称
+	optional string device		= 6;//	登录设备名称
+	optional string deviceSystem= 7;//	登录系统名称
+	optional string networkType	= 9;//	联网类型名称
+	optional string prisonBreak	= 10;//	是否越狱(0:否   1:是)
+	optional string operator	= 11;//	运营商名称
+}
+
+//用户信息
+message PBPlayerInfo
+{
+	required int64 guid = 	1;	//玩家GUID
+	required string name = 	2;	//玩家昵称
+	required int32 sex = 3;		//玩家性别
+	required int32 level = 4;	
+	required int32 exp = 5;	
+	required int32 money = 6;	//玩家金钱
+	required int32 gem = 7;		//玩家钻石
+	required int32 magic = 8;	//玩家魔法
+	required int32 logoutTime = 10;	//玩家上次退出的时间
+	required int32 loginTime = 11;	//玩家本次登录的时间
+	required int32 catFactoryLevel = 12; //喵工厂等级
+	required string mood			= 13;
+}
+
+//用户关键数值数据
+message PBPlayerCore
+{
+	required int32 level = 4;	
+	required int32 exp = 5;	
+	required int32 money = 6;	//玩家金钱
+	required int32 gem = 7;		//玩家钻石
+	required int32 magic = 8;	//玩家魔法
+}
+
+//玩家所需要的其它数据，只发一次
+message PBPlayerInfoEx
+{
+	repeated int32 unlockPlantTempId	 	= 4;
+	repeated int32 unlockDecorationTempId   = 5;
+}
+
+//用户切换语言
+message CSChangeLanguage
+{
+	required int32 languageId				= 1;	//Chinese = 0, English = 1
+}
+
+message SCChangeLanguageRet
+{
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              渠道号定义                               ///////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	enum ChannelId 
+	{
+		/****************** iOS（10000 - 11000) ***************************/
+		Appstore		= 10000;
+		
+		/****************** Android(20000 - 21000) ***************************/
+		Lenovo			= 20000;
+		
+		/****************** winhpone(30000 - 31000) ***************************/
+		
+		/****************** 综合(50000 - 51000) ***************************/
+		Channel_91		= 50000;
+	}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              错误处理                               ///////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	enum ErrorType 
+	{
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////           100000以下的错误需要重进游戏             ///////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		/****************** 系统相关（10000 - 11000) ***************************/
+		ServerError 				= 10000;	//服务器内部错误
+		Player_Session_Expire		= 10010;	//Session过期，需要重登录
+		
+		/****************** 角色相关（11000 - 12000) ***************************/
+		Player_Not_Exist			= 11000;	//玩家不存在
+		Player_GOLD_NOT_ENOUGH		= 11001;	//所需金币不足	
+		Player_MAGIC_NOT_ENOUGH		= 11002;	//所Comparable需魔法不足
+		Player_GEM_NOT_ENOUGH		= 11003;	//所需宝石不足
+		Player_LEVEL_NOT_ENGOUGH	= 11004;	//所需等级不足
+		Player_RequestGold_Wrong	= 11005;	//客户端请求金币数量错误，前后端数据不同步
+		Player_RequsetGem_Wrong		= 11006;	//客户端请求宝石数量错误，前后端数据不同步
+		Player_RequestMagic_Wrong	= 11007;	//客户端请求魔法数量错误，前后端数据不同步
+		Player_FRIEND_NOT_ENOUGH	= 11008;	//好友人数不足
+		Player_RequestExp_Wrong		= 11009;	//客户端请求经验数量错误，前后端数据不同步
+		Player_New_Guide_Wrong		= 11010;	//新手引导错误
+		
+		/****************** 登录相关 [12000 - 13000) ***************************/
+		Player_Register_Failed		= 12000;	//注册失败, 请稍候重试
+		Player_Login_VerifyFailed	= 12001;	//登录验证失败
+		Player_ID_Error 			= 12002;	//玩家Id非法
+		
+		
+				
+		/****************** 育种相关（13000 - 14000) ***************************/
+		Breed_Error					= 13000;	//如果没有定义，就返回这个错误
+		Breed_Verification_Child_Error  = 13001;//育种验证失败
+		Plant_RankStar_Validation_Error = 13002;//植物星级随机验证错误
+		
+		/*****************世界树相关（14000 - 15000) ***************************/
+		 WorldTree_Error			= 14000;	//如果没有定义，就返回这个错误 
+		 WorldTree_Not_Exist		= 14001;	//世界树不存在
+		 WorldTree_Table_Error		= 14002;	//世界树数据和配置表数据不一致
+		 Collection_Error			= 14100;	//收集错误
+		 Collection_Table_Not_Find 	= 14101;	//没找到相应收集的配置表
+		 Collection_Reward_Accepted	= 14102;	//收集奖励已经领取
+		 Collection_Plant_Not_Finsh = 14103;	//植物收集没有完成
+		/****************** 好友相关（15000 - 16000) ***************************/
+        Friend_Error				= 15000;	//如果没有定义，就返回这个错误    
+		Friend_Not_Exist			= 15001;	//好友对象不存在
+		Collect_Friend_Magic_Wrong  = 15010;	//收集好友魔法错误
+		Collect_Friend_Magic_Times_Wrong=15011; //收集好友魔法次数错误
+		
+		
+		/****************** 商城相关（16000 - 17000) ***************************/
+		Shop_Error					= 16000;	//如果没有定义，就返回这个错误
+		Shop_Item_Not_Exist			= 16001;	//要购买的物品不存在
+		
+		/****************** Room相关（17000 - 18000) ***************************/
+        Plant_Error					= 17000;	//如果没有定义，就返回这个错误
+		Plant_Not_Exist				= 17001;	//植物不存在
+		Plant_Collect_Money_Wrong	= 17002;	//收集的钱币数不对
+		Plant_Feed_Magic_Wrong		= 17003;	//喂食花费的Magic与实际需要花费的不一至，前端有误或作弊
+		Plant_Settle_Exp_Wrong		= 17004;	//植物添加经验错误
+		Plant_Table_Not_Exist		= 17005;	//植物配置表错误
+		Plant_Level_Not_Enough		= 17006;	//植物等级不足
+		Plant_State_Wrong			= 17007;	//植物状态错误
+		Garbage_Error				= 17010;	//垃圾相关错误
+		Garbage_Table_Not_Exist		= 17011;	//没有找到配置表关联的信息
+		Garbage_Not_Exist			= 17012;	//垃圾不存在
+		Garbage_Time_Not_Enough		= 17013;	//清理垃圾倒计时的时间不够
+		Expand_Error				= 17020;	//地块相关错误
+		Expand_Not_Exist			= 17021;	//玩家地块信息不存在
+		Expand_Not_All_Open			= 17022;	//地块没有开启完
+		Island_Error				= 17030;	//岛屿相关错误
+		Island_Is_Open				= 17031;	//岛屿已经开启
+		IsLand_Not_Exist			= 17032;	//岛屿不存在
+		
+		
+		/****************** 任务相关（18000 - 19000) ***************************/
+		Mission_Error				= 18000;	//任务错误，包含以下
+		Mission_Not_Exist			= 18001;	//任务不存在
+		Mission_Not_Accepted		= 18002;	//任务还没有接受
+		Mission_Reward_Not_Exist	= 18003;	//任务奖励不存在
+		
+		/****************** 活动相关（19000 - 20000) ***************************/
+		DailyReward_Error			= 19000;	//每日奖励错误
+		DailyReward_Table_Not_Exist = 19001;	//每日奖励配置错误，找不到对应的配置信息
+		DailyReward_Already_Get		= 19002;	//已经领取了每日奖励
+		DailyReward_Time_Not_Enough = 19003;	//每日奖励时间未到
+		DailyReward_Item_Num_Error	= 19004;	//每日奖励请求道具数量错误
+		Puzzle_Error				= 19010;	//拼图奖励错误
+		Puzzle_Data_Error			= 19011;	//拼图数据不一致
+		Puzzle_Activity_Not_Exist   = 19012; 	//拼图活动不存在
+		FanPai_Error				= 19020;	//翻牌错误
+		FanPai_Table_Error			= 19021;	//翻牌配置表数据错误
+		FanPai_Activity_Not_Exist	= 19022;	//翻牌活动不存在
+		FanPai_Activity_Validation_Error = 19023;//翻牌活动算法验证出错
+                                               
+		/****************** 抽奖相关（20000 - 21000) ***************************/
+		
+		/****************** 仓库相关（21000 - 22000) ***************************/
+		Storage_Error				= 21000;	//如果没有定义，就返回这个错误
+		Storage_Settle_Number_Wrong	= 21001;	//种植植物或放置装饰物数目错误
+		Storage_Not_Exist			= 21002;	//仓库物品不存在
+		
+		/****************** Market市场相关（22000 - 23000) ***************************/
+		
+		
+		/****************** 建筑相关（23000 - 24000) ***************************/
+		Market_Error				= 23000;	//如果没有定义，就返回这个错误
+		Market_Not_Exist			= 23001;	//Market不存在
+		
+		Building_Error				= 23010;	//如果没有定义，就返回这个错误
+		Building_Not_Exist			= 23011;	//建筑物不存在
+		Building_Table_Not_Exist	= 23012;	//没有找到对应的配置表
+		Buildint_State_Error		= 23013;	//建筑物状态错误
+		Hotel_Error					= 23020;	//如果没有定义，就返回这个错误
+		Hotel_Not_Exist				= 23021;	//Hotel不存在
+		Hotel_Already_Use			= 23022;	//Hotel格子已经被其他植物占用
+		Hotel_Already_Open			= 23023;	//Hotel格子已经开启
+		Hotel_Table_Not_Exist		= 23024;	//Hotel配置表数据错误
+		
+		
+		/****************** Avatar相关（24000 - 25000) ***************************/
+		Avatar_Error				= 24000;	//如果没有定义，就返回这个错误
+		Avatar_Not_Exist			= 24001;	//Avatar不存在
+		Avatar_Id_Repeat			= 24002;	//Avatar ID类型重复
+		Avatar_Table_Not_Exist		= 24003;	//Avatar配置表不存在，非法数据
+		
+		/****************** 支付相关（25000 - 26000) ***************************/
+		Charge_Error				= 25000;	//如果没有定义，就返回这个错误Cha	
+		Iap_Table_Not_Exist			= 25001;	//购买金币、魔法配置表错误，数据不存在
+		Iap_Exist_Unhandle_Order	= 25002;	//服务器有未处理完的订单，输出错误
+		Iap_Appstore_Verify_Failed	= 25003;	//Appstore验证没有通过,finish
+		Iap_Receipt_Already_Verified= 25004;	//订单已验证,finish
+		Iap_Server_TimeOut			= 25005;	//服务器超时,重试
+		Iap_Appstore_TimeOut		= 25006;	//连接Appstore超时，重试
+		Iap_Receipt_Repeat_Verified = 25007;	//订单重复
+		
+		/****************** 抢车位相关（26000 - 27000) ***************************/
+		GrabIsland_Error			= 26000;	//如果没有定义，就返回这个错误
+		GrabIsland_Not_Exist		= 26001;	//车位，即放植物到岛屿不存在
+		GrabIsland_State_Error		= 26002;	//车位状态错误
+		GrabIsland_PlantId_Error	= 26003;	//车位存放的植物ID错误
+		GrabIsland_GrabPlayer_Error = 26004;	//占有车位的玩家ID错误
+		GrabIsland_Time_Error		= 26005;	//车位的时间错误
+		
+		/****************** 邮件相关（27000 - 28000) ***************************/
+		Mail_Error					= 27000;	//如果没有定义，就返回这个错误
+		Mail_Not_Exist				= 27001;	//邮件不存在
+		Mail_Is_Not_Gift			= 27002;	//不是礼物邮件
+		Mail_Is_Not_Item			= 27003;	//不是物品邮件
+		Gift_Error					= 27100;	//礼物错误
+		Gift_Type_Not_Exist			= 27101;	//礼物类型错误
+		Gift_Table_Not_Exist		= 27102;	//礼物配置表错误，找不到
+		
+		/****************** 喵工坊相关（28000 - 29000) ***************************/
+		Material_Not_Effective     = 28000;		//有无效的材料
+		Material_Validation_Error   = 28001;		//材料算法验证失败
+	
+		/****************** 推图相关（29000 - 30000) ***************************/
+		TuiTu_NotHave_Error		= 29000;			//没有推图信息
+		TuiTu_Validation_Error     = 29001;			//推图验证失败
+		TuiTu_Props_Validation_Error = 29002;		//推图道具验证失败
+		TuiTu_Props_NotHave_Error	 = 29003;		//没有推图道具信息
+		
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////           100000以上的错误不会重进游戏             ////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		CSCreatePlayer_PlayerNameEmpty 				= 100000;	//名字为空
+		CSCreatePlayer_PlayerNameHasSensitiveStr 	= 100001;	//名字中有敏感字
+		CSCreatePlayer_PlayerNameTooLong	 		= 100002;	//名字太长
+		CSCreatePlayer_PlayerNameHasIllegalChar 	= 100003;	//名字中有非法字符
+		
+		CSCompleteMarketTask_MarketTaskNotExist		= 110001;	//Market任务不存在
+		CSMarketShelveItem_MarketGridIsUse			= 110002;	//Market格子已经被使用
+		CSBuyMarketItem_MarketPlantNotShelves		= 110003;   //购买好友的物品已下架
+		
+		CSAskRankingList_Ranking_Type_Error			= 120001;	//排行榜请求类型错误
+
+	}
+	
+/*************************************** 在此之前不要插入其它Message *******************************************/
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              GM命令               /////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//测试包
+message CSPacketTest
+{
+	optional int32 dataSize	= 1;
+}
+
+message SCPacketTestRet
+{
+	required int32 state = 1;
+}
+
+//GM命令
+message CSGMcmds
+{
+	required string cmds = 1;//gm命令格式  command:xxxx
+}
+
+message SCGMcmdsRet
+{
+  required int32 state = 1;// 0=成功，其它=失败  -1=GM命令格式不对
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              好友相关               /////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//好友数据
+message PBFriendItem
+{
+	required int64 playerId		= 1;
+	required string playerName	= 2;
+	required PBAvactarCore playerIcon 	= 3;
+	required int32 level 		= 4;
+	required int32 sex 			= 6;
+	required int32 onlineState 	= 8;	//在线状态
+	required int32 snsPlatformId= 9;	//好友来源, 不分类 = 0，游戏内部  = 1，GameCenter = 2, Facebook = 3, 
+	optional string stateText	= 10;	//好友心情
+	required int32 haveInviteQCW                = 11;   //1已经邀请过抢车位，0没有
+	required int32 haveSendGift                 = 12;   //1已经送过礼物，0没有
+}
+
+//邮件
+message PBMailItem
+{
+	required int64 mailId 		= 1;
+	required int32 fromType 	= 2;	//玩家 = 0; GM = 1;
+	optional int64 fromId 		= 3;	//如果来自GM，fromId = -1
+	optional PBAvactarCore fromIcon	= 4;	//好友图标
+	optional string fromName 	= 5;	//好友名称
+	optional int32 fromLevel	= 6;	//好友Level
+	required int32 fromTime 	= 7;	//发送时间	
+	required int32 contentType	= 8;	//消息 = 0; 物品 = 1;好友申请 = 2;抢车位奖励=3，邀请抢车位=4;
+	optional int32 contentItem	= 9;	//金币 = 0; 魔法 = 1; 植物 = 2; 礼物 = 3; 钻石 = 4; 消除道具 = 5;
+	optional string contentValue = 10;	//金币和魔法对应是数量，植物对应是TableID，礼物对应gift TableID ，消除道具为 TabID-数量|TabID-数量	
+	optional string contentText	= 11;	//消息对应是内容
+	optional string contentIcon	= 12;	//物品图标
+	required int32 state 		= 13;	//0:未读 1：已读 2:已领取
+}
+
+message CSAskFriendList
+{
+	required int32 snsPlatformId 		= 1;	//好友来源, 不分类 = 0，游戏内部  = 1，GameCenter = 2, Facebook = 3, 
+	optional int32 localCount	 		= 2;	//本地已缓存好友数量
+	optional int32 requestCount			= 3;	//请求数量
+}
+
+message SCAskFriendListRet
+{
+	required int32 snsPlatformId		= 1;	//好友来源, 不分类 = 0，游戏内部  = 1，GameCenter = 2, Facebook = 3, 
+	required int32 totalCount			= 2;	//当前平台的总量
+	repeated PBFriendItem friendItem 	= 3;	//好友列表
+}
+
+message CSAskFriendTotalCount
+{
+	required int32 snsPlatformId 		= 1;	//好友来源,没有IM，就用游戏内好友
+}
+
+message SCAskFriendTotalCountRet
+{
+	required int32 snsPlatformId 		= 1;	//好友来源
+	required int32 totalCount			= 2;
+}
+
+message CSSearchPlayer
+{
+	required int64 playerId		= 1;	//
+}
+
+message SCSearchPlayerRet
+{
+	required int32 state				= 1;	//为0表示成功
+	optional PBFriendItem friendItem 	= 2;
+}
+
+message CSAddGameInternalFriend
+{
+	required int64 playerId		= 1;	//
+}
+
+message SCAddGameInternalFriendRet
+{
+	required int32 state				= 1;	//为0表示成功
+	required PBFriendItem friendItem 	= 2;
+	required int32 totalCount			= 3;	//返回当前Game Internal好友总数
+}
+
+//以下是邮件相关
+message CSSendMessage
+{
+	required int64 friendId = 1;	//好友ID
+	required string content = 2;	//内容
+	optional int64 messageId = 3; 	//回复消息的ID，有此项表示要删除这个Message
+}
+
+message SCSendMessageRet
+{
+	required int32 state = 1;	//成功 = 0;
+}
+
+message CSSendGift
+{
+	repeated int64 friendIdList = 1;	//好友ID
+	required int32 giftId 		= 2;	//礼物ID
+	repeated int64 excludeFriendList = 3;   //全送情况下排除的好友列表
+	required int32 isTotalSend = 4;     //是否全送，0为全送，1为不选送
+}
+
+message SCSendGiftRet
+{
+	required int32 state = 1;	//成功 = 0;
+}
+
+//接收GM邮件或好友礼物，如果是金币、魔法直接加到player上，如果是物品接收并放入仓库
+message CSReceiveGift
+{
+	repeated int32 mailId 				= 1; 
+	optional PBPlayerCore playerCore	= 2;
+}
+
+message SCReceiveGiftRet
+{
+	required int32 state = 1;
+}
+
+message CSReadMessage
+{
+	repeated int64 messageId = 1;
+}
+
+message SCReadMessageRet
+{
+	required int32 state = 1;
+}
+
+message CSDeleteMessage
+{
+	repeated int64 messageId = 1;
+}
+
+message SCDeleteMessageRet
+{
+	required int32 state = 1;
+}
+
+message CSAskMailList
+{
+	optional int32 pageNum	= 2;	//请求第几页
+	optional int32 pageCount	= 3;	//每页数量
+}
+
+message SCAskMailListRet
+{
+	required int32 state 				= 1;	//为0表示请求成功
+	required int32 totalCount			= 2;
+	repeated PBMailItem mailItem		= 3;
+}
+
+//随机好友
+message CSAskRandomFriendData
+{
+	
+}
+
+message SCAskRandomFriendDataRet
+{
+	required PBFriendData friend_Data = 1;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              任务相关               /////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//已接受任务
+message PBAcceptMission
+{
+	required int32 missionId    = 1;
+	optional int32 missionData  = 2;	//任务进度，默认为0，-1表示失败，正数表示当前任务的进度
+	required int32 acceptOrder  =3;    //接受任务的顺序，数值小的先接受
+	required int32 state        = 4;   //任务进行中的状态：0 ：接受任务状态 1：进行中 2:完成但未收集 3：完成
+}
+
+//任务奖励
+message PBMissionRewardItem
+{
+	required int32 rewardType 	= 1;	//奖励类型1(1:钻石 2:金币 3:魔法 4:经验 5:材料碎片 6时装)
+	required int32 rewardNum 	= 2;
+	optional int32 rewardId     = 3;
+}
+
+message CSAcceptMission
+{
+	required int32 missionId = 1;
+}
+
+message SCAcceptMissionRet
+{
+	required int32 state = 1;	//参数验证失败 = -1;此任务已完成 = -2;此任务在进行中 = -3;
+}
+
+message CSMissionProgress
+{
+	required PBAcceptMission missionProgress = 1;
+}
+
+message SCMissionProgressRet
+{
+	required int32 state = 1;//参数验证失败 = -1;此任务已完成 = -2;此任务没有开始 = -3;
+}
+
+message CSCompleteMission
+{
+	required int32 missionId 					= 1;
+	repeated PBMissionRewardItem rewardItems	= 2;
+	required PBPlayerCore playerCore			= 3;	//任务完成后的玩家数据
+}
+
+message SCCompleteMissionRet
+{
+	required int32 state = 1;
+}
+
+message CSFailMission
+{
+	required int32 missionId = 1;
+}
+
+message SCFailMissionRet
+{
+	required int32 state = 1;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              Ranking相关             //////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//排行榜
+message PBRankingInfo
+{
+	required int64 playerId			= 1;
+	required int32 level			= 2;
+	required string name			= 3;
+	required PBAvactarCore icon			= 4;
+	required int32 score			= 5;
+	required int32 plantCount		= 6;
+	required int32 rank				= 7;
+	required int32 isMyFriend		= 8;	//是否为我的好友 - 0不是好友，1是好友
+}
+
+message CSAskRankingList
+{
+	required int32 rankType 	= 1;	
+	//Golbal = 0; Local = 1; AllFriend = 2; InGameFriend = 3; GolbalCharm = 4; LocalCharm = 5; AllFriendCharm = 6;InGameFriendCharm = 7;GlobalTuiTu = 8; LocalTuiTu = 9;AllFriendTuiTu = 10; InGameFriendTuiTu = 11; 
+}
+
+message SCAskRankingListRet
+{
+	required int32 rankType 		= 1;
+	repeated PBRankingInfo rankList = 2;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              仓库相关               /////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//仓库
+
+//无属性的Plant Decor数据结构 - 无GUID
+message PBStorageItem
+{
+	required int32 itemType		= 1;	//金币 = 0; 魔法 = 1; 植物 = 2;装饰物 = 3，金币和魔法不存，直接加到玩家身上
+	required int32 tableId		= 2;
+	required int32 count 		= 3;
+}
+
+//仓库
+message CSAskStorageList
+{
+}
+
+message SCAskStorageListRet
+{
+	repeated PBStorageItem 		itemList		= 1;	//无属性的Plant + Decor列表
+	repeated PBPlantInfo 		plantInfo		= 2;	//带属性的Plant列表
+	repeated PBDecorationInfo	decorInfo		= 3;	//带属性的Decor列表
+}
+
+//出售
+message CSSellStorageItem
+{
+	repeated PBStorageItem items			= 1;	//希望出售的无属性Plant + Decor列表 (可重复)
+	repeated PBPlantInfo plant				= 2;	//希望出售的有属性的Plant列表(可重复)
+	repeated PBDecorationInfo decorInfo		= 3;	//希望出售的有属性的Decor列表(可重复)
+	required int32 totalGold				= 4;	//出售物品获得总金币数
+	required PBPlayerCore playerCore		= 5;	//当前玩家数据
+}
+
+message SCSellStorageItemRet
+{
+}
+
+//种植植物
+message CSSettleStoragePlant
+{
+	required int32 settleType				= 1;	// 0= 无属性 1= 有属性(有属性时storageItem不传)
+	required PBPlantInfo plantInfo			= 2;	// 种植的植物信息 - 无属性的:GUID为tempGUID, 有属性的:GUID为正常GUID.
+	optional PBStorageItem storageItem	 	= 3;	// storageItem.count 必须是 1
+}
+
+message SCSettleStoragePlantRet
+{
+	required int32 settleType				= 1;	// 0= 无属性 1= 有属性(有属性时判断CS包的guid是否为临时GUID,若不是,返回guid=tempGUID=非临时,否则guid=正常, tempGUID=临时, 无属性时返回guid=正常, tempGUID=临时)
+	required int64 guid 					= 2;	// 服务器生成的植物GUID
+	required int64 tempGuid 				= 3;
+}
+
+//种植装饰物
+message CSSettleStorageDecoration
+{
+	required int32 settleType				= 1;	// 0= 无属性 1= 有属性
+	required PBDecorationInfo decoInfo 		= 2;	//注释同Plant
+	optional PBStorageItem storageItem	 	= 3;	//注释同Plant
+}
+
+message SCSettleStorageDecorationRet
+{
+	required int32 settleType				= 1;	// 0= 无属性 1= 有属性
+	required int64 guid 					= 2;	//服务器生成的装饰物GUID
+	required int64 tempGuid 				= 3;	//注释同Plant
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              育种相关               /////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//育种数据
+message PBBreedRoomInfo
+{
+	required int32 islandId 		= 1;
+	required int32 isBreeding		= 2;
+	required int64 Fa_Plant 		= 3;
+	required int64 Ma_Plant 		= 4;
+	required int32 child_PlantId 	= 5;
+	required int32 startTime 		= 6;
+}
+
+message CSAskBreedSeed
+{
+	required int32 islandId 				= 1;
+	required PBPlantInfo motherPlant 		= 2;    //育种后母亲
+	required PBPlantInfo fatherPlant 		= 3;    //育种后父亲
+	required int32 childPlantTempId 		= 4;	//孩子的PlantTempID
+	required int32 randomNumber             = 5;	//线性随机次数
+}
+
+message SCAskBreedSeedRet
+{
+}
+
+message CSSpeedUpBreed
+{
+	required PBBreedRoomInfo breedRoomInfo 	= 1;
+	required int32 costGems					= 2;
+	required PBPlayerCore playerCore 		= 3;
+}
+
+message SCSpeedUpBreedRet
+{
+	required int32 state 					= 1; 
+}
+
+message CSPlantBreedSeed
+{
+	required int32 Island_Id 				= 1;
+	required PBBreedRoomInfo breedRoomInfo 	= 2;
+	required PBPlantInfo motherPlant 		= 3;    //母亲
+	required PBPlantInfo fatherPlant 		= 4;    //父亲
+	required PBPlantInfo childPlant 		= 5;	//孩子的Plant
+	required int32 addExp                   = 6;
+	required PBPlayerCore player_Core         = 7;
+}
+
+message SCPlantBreedSeedRet
+{
+	required int32 state 					= 1;
+	required int64 childGuid 				= 2;
+	required int64 childTempGuid			= 3;
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              世界树相关               /////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//世界树
+message PBWorldTreeInfo
+{
+	required int32 startCDTime 				= 1;
+	required int32 produceMagicId			= 2;  //默认为0
+	required int32 produceState				= 3;  //0表示未生产，1表示正在生产，2表示生产完成
+}
+
+message CSAskWorldTreeMagic
+{
+	required int32 magic  	= 1;		//领取的魔法值
+	required int32 worldTreeMagicId  = 2;  
+	required PBPlayerCore player_Core 	= 3; 
+}
+
+message SCAskWorldTreeMagicRet
+{
+	required int32 state			 	= 1;			//为0表示领取成功
+}
+
+message CSQuickWorldTreeMagic
+{
+	required int32 costGems  	= 1;		//加速的消耗钻石数量
+	required int32 worldTreeMagicId  = 2;  
+	required PBPlayerCore player_Core 	= 3; 
+}
+
+message SCQuickWorldTreeMagicRet
+{
+	required int32 state			 	= 1;			//为0表示加速成功
+}
+
+message CSBuyWorldTreeMagic
+{
+	required int32 money  	= 1;
+	required int32 worldTreeMagicId  = 2;  
+	required PBPlayerCore player_Core 	= 3;    
+}
+
+message SCBuyWorldTreeMagicRet
+{
+	required int32 state			 	= 1;			//为0表示购买成功
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              ROOM相关               /////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//植物
+message PBPlantInfo
+{
+	required int64 GUID 			= 1;
+	required int32 tempID 			= 2;
+	required int32 level 			= 3;
+	required int32 posX 			= 4;//Grid X
+	required int32 posY 			= 5;//Grid Y
+	required int32 isFlip 			= 6;//是否旋转，是：1;否0
+	required int32 StateStartTime 	= 7;//上一次收集金币的时间，Unix时间戳（1398330300）
+	required int32 feedTimes 		= 8;
+	required int32 rankLevel 		= 9;
+	required int32 plantState 		= 10;
+	required int32 preProduceNumber = 11;
+	required int32 islandId 		= 12;
+}
+
+//装饰物
+message PBDecorationInfo
+{
+	required int64 GUID 			= 1;
+	required int32 tempID 			= 2;
+	required int32 gridX			= 3;//格子位置
+	required int32 gridY			= 4;//格子位置
+	required int32 isFlip			= 5;//是否旋转，是：1;否0
+	required int32 islandId 		= 6;
+}
+
+
+//建筑物
+message PBBuildingInfo
+{
+	required int64 GUID 			= 1;
+	required int32 tempID 			= 2;
+	required int32 gridX			= 3;//格子位置
+	required int32 gridY			= 4;//格子位置
+	required int32 number			= 5;//存档NumberId 为-1表示非存档建筑物
+	required int32 islandId 		= 6;
+	required int32 state            = 7;
+	required int32 StateStartTime   = 8;
+}
+
+//垃圾
+message PBGarbageInfo
+{
+	required int32 number 			= 1;
+	required int32 state			= 2;//垃圾状，正常状态 = 2;清理状态 = 4;清理完成 = 8;
+	optional int32 StartClearnTime  = 7;//如果是清理状态，表示清理开始时间
+}
+
+message CSQuickBornPlant
+{
+	required PBPlantInfo plantInfo		= 1;  //植物放置后的信息
+	required int32 costGems				= 2;  //花费的宝石
+	required PBPlayerCore player_Core 	= 3;  //植物放置后玩家信息
+}
+
+message SCQuickBornPlantRet
+{
+	//还没处理
+}
+
+message CSSettlePlant
+{
+	required PBPlantInfo plantInfo		= 1;  //植物放置后的信息
+	required int32 addExp				= 2;  //给玩家加的经验
+	required PBPlayerCore player_Core 	= 3;  //植物放置后玩家信息(要给玩家加经验)
+}
+
+message SCSettlePlantRet
+{
+	//还没处理
+}
+
+message CSCollectPlantGold
+{
+	required PBPlantInfo plantInfo		= 1;  //植物的信息 
+	required int32 collectGold			= 2;
+	required PBPlayerCore player_Core 	= 3;  //玩家信息(要给玩家加金币)
+	required int32 randomNumber         = 4;    //线性随机次数
+	repeated PBMaterial Material        = 5;    //材料信息
+}
+
+message SCCollectPlantGoldRet
+{
+	//还没处理
+}
+
+message CSFeedMagicForPlant
+{
+	required PBPlantInfo plantInfo		= 1;  //植物喂食后的信息
+	required int32 feedTimes			= 2;  //第几次喂食
+	required int32 feedMagic			= 3;  //此次喂食消耗的魔法
+	required PBPlayerCore player_Core 	= 4;  //植物喂食后玩家信息(要消耗魔法)
+}
+
+message SCFeedMagicForPlantRet
+{
+	//还没处理
+}
+
+message CSMoveGridObjPos
+{
+	required int64 objGuid				 = 1; //物品的Guid
+	required int32 objType 				 = 2; //物品类型(SceneEntityType)
+	required int32 objGridX 			 = 3; //物品位置
+	required int32 objGridY 			 = 4; //物品位置
+}
+
+message SCMoveGridObjPosRet
+{
+	//还没处理
+}
+
+message CSSellGridObj
+{
+	required int64 objGuid				 = 1; //物品的Guid
+	required int32 objType 				 = 2; //物品类型(SceneEntityType)
+	required int32 objGridX 			 = 3; //物品位置
+	required int32 objGridY 			 = 4; //物品位置
+	required int32 sellGold				 = 5; //卖出获得的金币
+	required PBPlayerCore player_Core 	 = 6; //植物卖出后(要获得金币)
+}
+
+message SCSellGridObjRet
+{
+	//还没处理
+}
+
+message CSClearnGarbage
+{
+	required PBGarbageInfo garbage 		 = 1;  //垃圾的信息
+	required int32 costGold				 = 2;	//花费的金币
+	required PBPlayerCore player_Core 	 = 3;  //清楚垃圾时候，会耗费金币
+}
+
+message SCClearnGarbageRet
+{
+	//还没处理
+}
+
+message CSQuickClearnGarbage
+{
+	required PBGarbageInfo garbage 		 = 1;  //垃圾的信息
+	required int32 costGems				 = 2;  //花费的宝石
+	required PBPlayerCore player_Core 	 = 3;  //清楚垃圾时候，会耗费钻石
+}
+
+message SCQuickClearnGarbageRet
+{
+	//还没处理
+}
+
+message CSCollectedGarbage
+{
+	required PBGarbageInfo garbage 		 = 1;  //垃圾的信息
+	required int32 addExp				 = 2;  //获得经验
+	required PBPlayerCore player_Core 	 = 3;  //获得经验
+}
+
+message SCCollectedGarbageRet
+{
+	//还没处理
+}
+
+message CSPlantSync
+{
+	repeated CSCollectPlantGold collectPlantGold = 1;
+}
+
+message SCPlantSyncRet
+{
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              扩地 开岛相关           /////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//小岛
+message PBIslandInfo
+{
+	required int32 islandId 				= 1;	//配置表ID
+	required int64 islandGuId				= 2;	
+	required int32 isIslandOpend			= 3; 	//1:opend 0:locked
+	optional PBBreedRoomInfo breedInfo      = 4;
+	required PBGrabPlantInfo grabPlantInfo	= 5;//岛屿抢车位信息
+}
+
+message CSExpandBlockByMoney
+{
+	required int32 number				= 1;	//地块编号
+	required int32 costMoney 			= 2;	//花费金币
+	optional int32 gridX				= 3;	//地块的中心格，用于验证
+	optional int32 gridY 				= 4;	//地块的中心格，用于验证
+	required PBPlayerCore playerCore	= 5;
+}
+
+message SCExpandBlockByMoneyRet
+{
+}
+
+message CSExpandBlockByGems
+{
+	required int32 number				= 1;	//地块编号
+	required int32 costGems 			= 2;	//花费宝石
+	optional int32 gridX				= 3;	//地块的中心格，用于验证
+	optional int32 gridY 				= 4;	//地块的中心格，用于验证
+	required PBPlayerCore playerCore	= 5;
+}
+
+message SCExpandBlockByGemsRet
+{
+}
+
+message CSUnlockIsland
+{
+	required int32 islandId				 = 1;	
+	required int32 costType				 = 2;	//花费类型  1:钻石 2：Money
+	required int32 costValue			 = 3;	//花费数值
+	required PBPlayerCore playerCore	 = 4;
+}
+
+message SCUnlockIslandRet
+{
+	required int32 state 				= 1;
+	optional PBIslandInfo islandInfo	= 2;
+}
+
+//请求解锁greenhouse（BreedIsland）
+message CSUnlockGreenhouse
+{
+	required int32 islandId 			= 1;
+	required int32 costType				= 2;	//花费类型 1:钻石 2：Money
+	required int32 costValue			= 3;	//花费数值
+	required PBPlayerCore playerCore	= 4;	
+}
+
+message SCUnlockGreenhouseRet
+{
+	required PBIslandInfo islandInfo	= 2;
+}
+
+message CSChangeIsland
+{
+	required int32 fromIslandId 		= 1;
+	required int32 toIslandId 			= 2;
+}
+
+message SCChangeIslandRet
+{
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              商店相关               /////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message CSShopBuyPlant
+{
+	required int32 shopID = 1;			//商品ID
+	required PBPlantInfo plantInfo = 2;
+	required PBPlayerCore playerCore = 3;
+}
+
+message SCShopBuyPlantRet
+{
+	required int32 state =1;
+	required int64 plantGuid = 2;
+	required int64 plantTempGuid = 3;
+}
+
+message CSShopBuyDecoration
+{
+	required int32 shopID = 1;			//商品ID
+	required PBDecorationInfo decorationInfo = 2;
+	required PBPlayerCore playerCore = 3;
+}
+
+message SCShopBuyDecorationRet
+{
+	required int32 state =1;
+	required int64 decorationGuid = 2;
+	required int64 decorationTempGuid = 3;
+}
+
+message CSShopBuyWeather
+{
+	required int32 shopID = 1;			//商品ID
+	optional PBPlayerCore playerCore = 3;
+}
+
+message SCShopBuyWeatherRet
+{
+	required int32 state =1;
+	required int64 weatherGuid = 2;
+	required int64 weatherTempGuid = 3;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              收集 Collection相关        //////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//收集
+message PBCollectionInfo
+{
+	required int32 tableId			= 1;
+	required int32 level			= 2;	//历史上获得该植物的最大等级
+	required int32 star				= 3;	//历史上获得该植物的最大评星 1, 2, 3
+	required int32 fatherTableId	= 4;
+	required int32 motherTableId	= 5;
+}
+
+//请求Collection列表
+message CSAskCollectionList
+{
+}
+
+message SCAskCollectionListRet
+{
+	repeated PBCollectionInfo collectionList				= 1;
+	repeated int32 GotRewardCollectTabID					= 2;	//记录了我已经领取奖励的collection类TableID
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              Market相关             //////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//交易
+message PBMarketItem
+{
+	required int32 tableId 		= 1;	//格子ID
+	required int32 goodsType 	= 3;	//植物 = 0;
+	required int32 goodsGuid	= 4;
+	required int32 price 		= 5;
+	required int32 status		= 6;	//未卖出 = 0; 已卖出 = 1; 未上架Good = 2;
+}
+
+//交易任务
+message PBMarketTask
+{
+	required int32 taskId 		= 1;
+	required int32 remainTime 	= 3;
+}
+
+message CSAskMarketList
+{
+}
+
+message SCAskMarketListRet
+{
+	repeated PBMarketItem itemList = 1;	//已开启的格子
+	repeated PBMarketTask taskList = 2;
+}
+
+message CSAskFriendMarketList
+{
+	required int64 playerGuid	= 1;
+}
+
+message SCAskFriendMarketListRet
+{
+	repeated PBMarketItem itemList = 1;	//已开启的格子
+	repeated PBPlantInfo plantInfo = 2;	//只返回InMarket状态的
+}
+
+message CSUnlockMarketItem
+{
+	required int32 itemTableId			= 1;
+	required int32 costGems				= 2;	//开启好友格子不用发
+	required PBPlayerCore playerCore 	= 3;	//开启好友格子不用发
+}
+
+message SCUnlockMarketItemRet
+{
+}
+
+//获取已卖出的物品的金币
+message CSGetSelledMarketGold
+{
+	required PBMarketItem marketItem 	= 1;
+	required int32 getGold				= 2;
+	required PBPlayerCore playerCore	= 3;
+}
+
+message SCGetSelledMarketGoldRet
+{
+}
+
+//上架物品
+message CSMarketShelveItem
+{
+	required PBMarketItem shelveItem	= 1;
+}
+
+message SCMarketShelveItemRet
+{
+}
+
+message CSBuyMarketItem
+{
+	required int64 friendGuid 			= 1;
+	required PBMarketItem marketItem 	= 2;
+	required PBPlayerCore playerCore	= 3; //扣费之后的数据,但是本地玩家数据不修改,由服务器验证后返回花费数量.客户端相应修改数据
+}
+
+message SCBuyMarketItemRet
+{
+	required int32 costMoney			= 1; //服务器扣费后,返回正常的player信息
+	required int64 plantGUID			= 2; //服务器将购买的PlantGUID返回,客户端放入Storage 
+}
+
+message CSRecycleMarketItem
+{
+	required PBMarketItem marketItem 	= 1;
+	required PBPlayerCore playerCore 	= 2; //加钱之后的数据,但不修改玩家数据,由服务器修改并返回.客户端更新玩家数据
+}
+
+message SCRecycleMarketItemRet
+{
+	required int32 state				= 1; // 0: 正常, 1: 已经被别人买了
+	optional int32 gainMoney			= 2; //如果是正常情况,发此字段,客户端据此修改玩家数据
+	optional int64 plantGUID			= 3; //如果是正常情况,发此字段,客户端从本地删除该植物
+	optional PBMarketItem marketItem    = 4; //如果被别人买了,发此字段,状态为已卖出,Price为售价
+}
+
+//交易任务
+message CSCompleteMarketTask
+{
+	required PBMarketTask marketTask 	= 1;
+	required int64 plantGuid			= 2;
+	required int32 rewardType			= 3;
+	required int32 rewardNum			= 4;
+	required PBPlayerCore playerCore	= 5;
+}
+
+message SCCompleteMarketTaskRet
+{
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              App Store iAP 相关           //////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//不花钱购买宝石，用于测试阶段
+message CSFakeBuyGems
+{
+	required int32 iapTableId			= 1;		//iAP配表id
+	required PBPlayerCore playerCore	= 2;		//基础信息
+}
+
+message SCFakeBuyGems
+{
+	required int32 state				= 1;
+}
+
+//用宝石购买金币或魔法
+message CSAskBuySpecialItem
+{
+	required int32 iapId 				= 1;		//换购的IAP id
+	required PBPlayerCore playerCore	= 2;		//换购后的数据
+}
+
+message SCAskBuySpecialItemRet
+{
+	required int32 state 			= 1;		//换购成功为0
+}
+
+//请求商品列表，由于表中已配置了产品列表，不需要从服务器请求了，这个消息包废弃
+message CSAskIAPProductList
+{
+	required string appBundleId		= 1;		//应用程序的BundleId
+	required int32 channelId 		= 2; 		//下载渠道:Appstore = 0, 91 = 1, 同步推 = 2
+}
+
+message SCAskIAPProductList
+{
+	repeated PBProductInfo product 	= 2;		//商品列表 
+}
+
+//请求校验账单
+message CSVerifyOrder
+{  
+	required string transactionId 	= 1;		//tid:苹果交易流水号 
+	required int32 goodsTableId 	= 2;		//商品表id
+	required string productId 		= 3;		//pid 商品苹果商店id
+	required string receipt 		= 4;		//Base64编码的单据信息
+	required string appBundleId		= 5;		//应用程序的BundleId
+}
+
+//返回校验账单 
+message SCVerifyOrderRet
+{
+	required int32 result 			= 1;		//结果 0:验证成功 -1：失败;
+	required string transactionId 	= 2;		//tid:苹果交易流水号 
+	required int32 goodsTableId 	= 3; 		//商品表id
+	required int32 playerGems 		= 4;		//玩家当前钻石
+	optional int32 errorCode		= 5;		//定义在ErrorType Iap里面
+}
+
+message PBProductInfo
+{
+	required int32 goodsId 			= 1;		//商品表id
+	required string productId 		= 2;		//pid 商品苹果商店id
+	required int32 goodsNumber 		= 3;		//游戏内代币数量
+	required string goodsPrice 		= 4;		//人民币价值
+	required string goodsName		= 5;		// 
+	optional string goodsIcon 		= 6;		//icon
+	optional string goodDec 		= 7;		//商品描述
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              好友家相关                               ///////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message PBFriendData
+{
+	required PBPlayerInfo player_Info 			= 1;	//玩家基本信息
+	repeated PBDecorationInfo decoration_Info 	= 2;	//装饰物
+	repeated PBPlantInfo plant_Info 			= 3;	//植物列表 只返回Produce 和 Breeding状态的
+	repeated PBGarbageInfo garbage_Info 		= 4;	//垃圾，只发已清除的垃圾ID
+	repeated int32 expand_Info 					= 5;	//地块，只发已开的地块ID
+	repeated PBBuildingInfo building_Info		= 6;	//如果建筑是固定的那几个一直在地图上，可以不用发
+	repeated PBIslandInfo island_Info			= 7;	//开岛
+	required PBAvactarData aVatar 				= 8;
+	required int32 enterIslandId 				= 9;
+	required int32 isMyFriend					= 10;   //0不是好友，1是好友
+	required int32 surplusCollectMagicTimes     = 11;   //收集该好友剩余魔法次数
+	required int32 surplusMyCollectMagicTimes   = 12;   //自己剩余收集魔法总次数
+	
+	
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              换装相关               /////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message PBAvactarData
+{
+	required PBAvactarCore avactarCore          = 3;
+	repeated PBClothesData clothesStorage		= 4;    //有哪些衣服，不算穿的衣服
+	repeated int32 clothsTableId 				= 5;	//时装收集tableId
+}
+
+message PBClothesData
+{
+	required int64 GUID 						= 1;
+	required int32 clothesId 					= 2;
+	optional int32 isSuit                       = 3; //0 : 非套装 1 ： 是套装
+}
+
+message CSAskeSaveClose
+{
+	repeated PBAvactarData avatar           	= 1;
+	repeated PBClothesData preClothes 			= 2;
+}
+message SCAskeSaveCloseRet
+{
+	
+}
+
+message CSShopBuyActor
+{
+	required int32 shopID				= 1;
+	required int64 tempGUID				= 2;
+	required int32 costType				= 3;
+	required int32 costValue			= 4;
+	required PBPlayerCore playerCore	= 5;
+}
+
+message SCShopBuyActorRet
+{
+	required int32 state				= 1;
+	required int64 tempGUID				= 2;
+	required int64 GUID					= 3;
+}
+
+message PBHotelPlant
+{
+	required int32 hotelID               =1;
+	required int64 PlantGUID             =2;
+}
+
+message CSPlantToHotel
+{
+	required int64 PlantGUID             = 1;
+	required int32 hotelID               =2;
+	required PBPlantInfo  plant_info     =3;
+}
+
+message SCPlantToHotelRet
+{
+    
+}
+
+message CSOpenHouse
+{
+	required int32 Openhouse     		 = 1;	//已开格子个数，不是tableID
+	required int32 gemCost     			 = 2;
+	required PBPlayerCore playerCore  	 = 3;
+}
+
+message SCOpenHouseRet
+{
+
+}
+
+message CSMovePlantToLand
+{
+	required int64 PlantGUID     =1;
+	required int32 PlantHouseID   =2;
+	required PBPlantInfo plant_info  =3;
+}
+
+message SCMovePlantToLandRet
+{
+	
+}
+
+message CSAskEnterFriendHome
+{
+	required int64 friendGuid          		= 1;
+}
+
+message SCAskEnterFriendHomeRet
+{
+	required PBFriendData friend_Data 		= 1;
+}
+
+message CSAskCompleteNewPlayerGuide
+{
+	required int32 newPlayerGuideId         = 1;
+}
+
+message SCAskCompleteNewPlayerGuideRet
+{
+	
+}
+
+
+//每日领奖金币，魔法，钻石，道具
+message CSDailyRewardAssert
+{
+	required int32 tableId					= 1;	//奖励Id
+	required int32 rewardType				= 2;	//奖励类型1钻石 2金币 3魔法;4道具
+	required int32 rewardNum				= 3;	//金币和魔法对应是数量
+	optional PBPlayerCore playerCore		= 4;
+}
+
+message SCDailyRewardAssert
+{
+	 
+}
+
+//每日奖励植物,装饰物
+message CSDailyRewardGoods
+{
+	required int32 itemType					= 1;	//4植物，5装饰,与storage的类型不同 6道具
+	required int32 tableId					= 2;
+}
+message SCDailyRewardGoods
+{
+
+}
+
+//每日奖励服装
+message CSDailyRewardAvatar
+{
+	required int64 tempGUID					= 1;
+	required int32 tableId					= 2;
+}
+
+message SCDailyRewardAvatar
+{
+	required int64 clothesGuid 				= 1;
+	required int64 clothesTempGuid 			= 2;
+}
+
+message CSCollectionBuilding
+{
+	required int32 addExp                   = 1;
+	required PBBuildingInfo building_Info   = 2;
+	required PBPlayerCore player_Core       = 3;
+}
+
+message SCCollectionBuildingRet
+{
+	
+}
+
+message CSBuyBuilding
+{
+	required int32 tableId				= 1;	//配表ID
+	required int32 costType				= 2;	//购买消费类型
+	required int32 costValue			= 3;	//购买消费数量
+	required PBBuildingInfo buildingInfo= 4;
+	optional PBPlayerCore playerData	= 5;	//购买后玩家基础数据
+}
+
+message SCBuyBuilding
+{
+	required int32 state				= 1;
+	required int64 tempGUID				= 2;
+	required int64 GUID					= 3;
+}
+
+message CSActivityPinTu
+{
+	
+}
+
+message SCActivityPinTu
+{
+	required int32 marketTaskPoint		= 1;
+	repeated int32 openedTileTableID	= 2;
+}
+
+message CSActivityPinTuOpenTile
+{
+	required int32 tileTableID			= 1;
+	required int32 cost					= 2;
+	required int32 costType				= 3; // 1 = Gold, 2 = Magic, 3 = MarketTaskPoint
+	optional PBPlayerCore playerCore	= 4;
+}
+
+message SCActivityPinTuOpenTile
+{
+	
+}
+
+message CSActivityPinTuGetReward
+{
+	required int32 rewardTableID		= 1; //根据RewardType读表
+	required int32 rewardType			= 2; // 1 = Plant, 2 = Actor, 3 = Decor
+	required int64 tempGUID				= 3;
+}
+
+message SCActivityPinTuGetReward
+{
+	required int32 rewardType			= 1; // 1 = Plant, 2 = Actor, 3 = Decor
+	required int64 tempGUID				= 2;
+	required int64 GUID					= 3;
+}
+
+message CSActivityPinTuBuyReward
+{
+	required int32 cost					= 1;
+	required int32 rewardType			= 2;
+	required int32 rewardTableID		= 3;
+	required int64 tempGUID				= 4;
+	optional PBPlayerCore playerCore		= 5;
+}
+
+message SCActivityPinTuBuyReward
+{
+	required int32 rewardType			= 1;
+	required int64 tempGUID				= 2;
+	required int64 GUID					= 3;
+}
+
+message CSCollectOthersMagic
+{
+	required int32 addMagic            = 1;
+	required PBPlantInfo plant_info    = 2; //好友的植物
+	required PBPlayerCore player_Core  = 3; 
+	required int64 othersPlayerGuid          = 4;
+}
+
+message SCCollectOthersMagicRet
+{
+	
+}
+
+message PBAvactarCore
+{
+	required int32 avatarId 					= 1; //角色ID
+	repeated int32 initAvatarResId 				= 2; //初始的角色套装 AvatarBase TabID
+	repeated PBClothesData clothes 				= 3; //角色衣服，穿的衣服
+	optional string playerIcon                  = 4;
+}
+
+message CSActivityFanPai
+{
+}
+
+message SCActivityFanPai
+{
+	required int32 isAfterShuffle					= 1;	// 是否为已洗牌状态 0:未洗牌或洗牌已抽 1:已经洗牌但未抽牌 2:未进行首次抽奖状态下未洗牌或洗牌已抽 3：未进行首次抽奖状态下已经洗牌但未抽牌
+}
+
+message CSActivityFanPaiShuffle
+{
+	required int32 cost								= 1; // 第一次洗牌=0
+	required int32 costType							= 2; //	(1:钻石 2:金币 3:魔法) 读timer表
+	optional PBPlayerCore playerCore				= 3;
+}
+
+message SCActivityFanPaiShuffle
+{
+}
+
+message CSActivityFanPaiGainReward
+{
+	required int32 rewardTableID				= 2;	//奖励DailyCard格子TableID 
+	optional int32 rewardValue					= 3;	//如果是金币钻石魔法,此字段为数量 如果是植物/装饰物/Actor,此字段为TableID
+	optional PBPlayerCore playerCore			= 4;	//用户信息
+	optional int64 tempGUID						= 5;	//Actor情况下发这个字段
+	required int32 randomNumber                 = 6;	//线性随机次数
+}
+
+message SCActivityFanPaiGainReward
+{
+	required int32 rewardType					= 1;	//1:钻石 2:金币 3:魔法,4植物，5装饰，6时装
+	optional int64 tempGUID						= 2;	// Actor情况下返回这两个字段
+	optional int64 GUID							= 3;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              抢车位相关               /////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//抢占好友家植物位
+message CSAskGrabPlantPos
+{
+	required int64 friendPlayerGuid		= 1;//朋友玩家id
+	required int32 friendPlayerIslandId	= 2;//朋友玩家岛屿id
+	required PBPlantInfo plantInfo		= 3;//发送欲抢占岛屿的当前植物信息
+} 
+
+message SCAskGrabPlantPosRet
+{
+	required int32 state                    = 1;       //岛屿是否被抢占	 1:被别人强占  0:抢占成功 2:已经达到抢占上限了
+	required int32 islandId                 = 2;       //抢占的岛屿ID
+	repeated PBGrabPlantInfo grabPlantInfo	= 3;       //该玩家所有岛屿抢车位是否被占的信息
+	optional PBGrabbedPlantInfo grabbedPlantInfo = 4;     //如果抢占成功的话 植物的抢占信息
+}
+
+//邀请好友抢占自家植物位
+message CSAskFriendGrabPlantPos
+{
+	repeated int64 playerGuid                   = 1;    //玩家的Guid
+	required int32 IslandId                     = 2;    //岛id
+	required int32 isSendAll					= 3; 	//0全部好友发送，1只发选中的
+	repeated int64 excludeFriendList			= 4;	//isSendAll 为0，排除此好友
+}
+
+message SCAskFriendGrabPlantPosRet
+{
+	repeated PBGrabPlantInfo  grabPlantInfo      = 2;    //自家所有岛屿抢车位是否被占的信息
+}
+
+//结束别人家在自家的植物占位
+message CSOthersGrabPlantCollect
+{
+	required int64 grabPlayerGuid                   = 1;  //抢占玩家的Guid
+	required int64 grabedPlayerGuid                 = 2;  //被抢占玩家的Guid
+	required int32 islandId                         = 3;
+	required PBPlantInfo plantInfo                  = 4;
+}
+
+message SCOthersGrabPlantCollectRet
+{
+	required int32            isCollected        = 1;    //是否已经结束了 1:被别人结束  0:结束成功
+	repeated PBGrabPlantInfo  grabPlantInfo      = 2;    //自己家所有岛屿抢车位是否被占的信息
+}
+
+//抢车位岛屿的抢占信息
+message PBGrabPlantInfo
+{
+	required int32  IslandId                     = 2;   // 被占岛的id
+	required int32 isGrabbed	             	 = 3;   //岛屿是否被抢占	 1:强占CD  0:未被抢占  2:CD完成
+	optional int64  playerGuid                   = 4;   //占有该岛的玩家guid
+	optional PBPlantInfo plantInfo               = 5;   //占有该岛的植物信息
+	optional int32 GrabStartTime	             = 6;   //抢车位的开始时间
+}
+
+//获取Collection奖励
+message CSGetCollectionReward
+{
+	required int32 tableId						= 1;
+	required int32 rewardCount					= 2;
+	optional PBPlayerCore playerCore 			= 3;
+}
+
+message SCGetCollectionReward
+{
+}
+
+//结束自家的植物占位
+message CSSelfGrabPlantCollect
+{
+	required PBPlantInfo plantInfo                  = 1;
+	required PBGrabbedPlantInfo grabPlantInfo       = 2;
+}
+
+message SCSelfGrabPlantCollectRet
+{
+	required int32            isCollected        = 1;  //是否已经结束了 1:被别人结束  0:结束成功
+	required PBPlantInfo      plantInfo          = 2;  //植物信息
+}
+
+//已抢车位的植物所在哪个玩家哪个岛屿信息
+message PBGrabbedPlantInfo
+{
+	required int64 	GUID		= 1;	//已抢位的植物guid
+	required int64  playerGuid	= 2;	//植物所在岛玩家guid
+	required int32  IslandId	= 3;	//植物所在岛屿id
+	required int32  grabStartTime	= 4;	//植物抢占的开始时间
+}
+
+//结束自家的植物在别人家的占位
+message CSSelfInOthersGrabPlantCollect
+{
+	required PBPlantInfo plantInfo                  = 1;
+	required PBGrabbedPlantInfo grabPlantInfo       = 2;
+	required int64 otherPlayerGUID					= 3;
+}
+
+message SCSelfInOthersGrabPlantCollectRet
+{
+	required int32            isCollected        = 1;  //是否已经结束了 1:被别人结束  0:结束成功
+	required PBPlantInfo      plantInfo          = 2;  //植物信息
+	repeated PBGrabPlantInfo  grabPlantInfo      = 3;  //别人家所有岛屿抢车位是否被占的信息
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@v1.0.0////////////////////              喵工厂               /////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//材料信息
+message PBMaterial
+{
+    required int32 materialID          = 1;   //材料Id
+	required int32 materialCount       = 2;    //材料数量
+}
+
+//合成需要的材料信息
+message PBMaterialAndAvatar
+{
+    required int32 materialID          = 1;   //材料Id ,serverID
+	required int32 materialCount       = 2;    //材料消耗数量
+	required int32 materialType		   = 3;    //材料类型
+	required int32 materialNowCount	   = 4;		//时装生成扣除材料后的材料数量
+}
+
+//升级喵工厂
+message CSUpgradeCatFactory
+{
+ required int32 cost         = 1; //消耗的金币
+ optional PBPlayerCore playerCore	= 2; //工坊升级后的玩家数据
+}
+message SCUpgradeCaFactory
+{
+
+}
+//合成衣服
+message CSCompoundCloth
+{
+  required int64 clothID                 =  1;    //衣服id  tableID
+  repeated PBMaterialAndAvatar materialAndAvatar = 2;   //合成需要的材料包
+  optional PBPlayerCore playerCore		 = 3; //衣服合成后的玩家数据
+  required int32 cost         			 = 4; //合成套装所消耗的金币
+  required int32 costType               = 5; //花费的金币类型
+  required int64 tempguid  		 		= 6; //临时id
+}
+message SCCompoundCloth
+{
+	required int64 tempguid				= 1;//临时id
+	required int64 guid					= 2;//服务器id
+}
+
+//材料收集(此包已废弃)
+message CSMaterialCollect
+{
+   repeated PBMaterial Material          = 1;   //材料信息
+}
+//(此包已废弃)
+message SCMaterialCollect
+{
+
+}
+//请求推图数据
+message CSAskTuiTuData
+{
+
+}
+//服务器返回推图数据包
+message SCAskTuiTuData
+{
+	required int32 curArea 					= 1;  //玩家最后解锁的区域AreaId
+    repeated PBCityData CityList            = 2;  //玩家所通关的城市的集合
+	required PBTuiTuGasData gasData    		= 3;  //植物信息 -- GasStation
+}
+//推图关卡数据
+message PBCityData
+{
+    required int32 CityId                   = 1;    //玩家所解锁并通关的关卡Id
+    required int32 StarCount                = 2;    //关卡所获得的星级数 -1 意思为未通关
+}
+//推图燃料站信息
+message PBTuiTuGasData
+{
+	required int32 tableID					= 1;	//Gas TableID
+	repeated PBTuiTuCellData cellData		= 2;	//Gas Cell List
+	required int32 km						= 3;  //玩家当前的Km总数
+}
+
+message PBTuiTuCellData
+{
+	required int32 cellID					= 1; 	//植物所在格子ID
+	required int32 plantTableID				= 2; 	//解锁关卡用到的植物信息列表 plantId为植物的
+	required int32 plantLv					= 3;	//植物等级
+	required int64 plantGUID				= 4;	//植物Guid
+}
+
+//放置植物发包
+message CSTuiTuSettlePlant
+{
+    required int64 plantGUID                = 1;	
+    required int32 gasStationTabID          = 2; 	//当前关卡的Id
+	required int32  cellID					= 3;	
+}
+
+message SCTuiTuSettlePlant
+{
+
+}
+
+message CSTuiTuAddKm
+{
+	required int32 tableID					= 1;	//energy TableID
+	required int32 currentKm				= 2;
+}
+
+message SCTuiTuAddKm
+{
+
+}
+
+message CSTuiTuOpenCity
+{
+	required int32 openCityID				= 1;
+	required int32 currentKm				= 2;
+}
+
+message SCTuiTuOpenCity
+{
+	
+}
+
+//推图关卡完成发包
+message CSTuiTuFinishGame
+{
+    required int32 curCityID 				= 1;	//当前通关城市的ID
+	required int32 starCount				= 2;	//获得的星级数
+	required string rewardList 				= 3;  	//奖励类型(1:钻石 2:金币 3:魔法 4:经验 5:材料碎片) [ 格式为 类型1-数量1|类型2-数量2 例如: 1-100|2-200|3-300 ]
+	required PBPlayerCore playerCore		= 4;	//玩家数据信息
+    optional int64 rewardId                 = 5;  	//奖励物品的tableID
+	required int32 nextCityId				= 6;	//下一关关卡id
+}
+
+message SCTuiTuFinishGame
+{
+
+}
+
+//抢车位CD完成状态改变
+message CSGrabPlantStateChange
+{
+	required int32 islandId=1;
+	required int32 type=2;		//0：自己车位cd走完，1：抢占别人的车位cd走完
+	required int64 playerId=3;	//车位拥有者玩家Id
+}
+
+message SCGrabPlantStateChangeRet
+{
+
+}
+
+//改变育种岛育种状态
+message CSBreeDRoomStateChang
+{
+	required int32 islandId                = 1;	 //岛屿Id
+	required int32 state                   = 2;  //育种状态
+}
+
+message SCBreeDRoomStateChangRet
+{
+
+}
+
+//垃圾CD完成状态改变
+message CSGarbageStateChange
+{
+	required PBGarbageInfo garbage 		 = 1;  //垃圾的信息
+}
+
+message SCGarbageStateChangeRet
+{
+
+}
+
+message CSCompleteMissionEnd
+{
+     required int32 missionId           = 1;
+}
+
+message SCCompleteMissionEndRet
+{
+}
+message CSSaveMood
+{
+	required string mood				= 1;
+}
+message SCSaveMoodRet
+{
+}
+
+//合成推图道具
+message CSTuiTuCompoundProps
+{
+  required int64 propsTabID                			= 1;	//道具id  tableID
+  repeated PBMaterialAndAvatar materialAndAvatar 	= 2;	//合成需要的材料包
+  optional PBPlayerCore playerCore		 			= 3;	//道具合成后的玩家数据
+  required int32 cost         			 			= 4;	//合成道具所消耗的值
+  required int32 costType               			= 5;	//花费的类型 类型(1:钻石 2:金币 3:魔法 4:经验 5:材料碎片)
+}
+message SCTuiTuCompoundPropsRet
+{
+
+}
+
+//使用推图道具
+message CSUseProps
+{
+	required PBTuiTuProps props				=  1;	//道具
+	required int32 cityID					=  2;	//关卡id tableID
+}
+message SCUsePropsRet
+{
+
+}
+
+message PBTuiTuProps
+{
+	required int32 propsTabID			=	1;
+	required int32 count				=	2;
+}
+
